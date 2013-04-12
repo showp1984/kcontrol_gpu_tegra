@@ -1,25 +1,18 @@
 KERNEL_BUILD := /home/showp1984/WORK/kernel/3.4.0-modbuild-kernel-aosp/
 
-obj-m += kcontrol_gpu_msm.o
+obj-m += kcontrol_gpu_tegra.o
 
 all:
-ifneq ($(wildcard mach-msm),) 
-	rm mach-msm
+ifneq ($(wildcard mach-tegra),)
+	rm mach-tegra
 endif
-ifneq ($(wildcard gpu_msm),) 
-	rm gpu_msm
-endif
-	ln -s $(KERNEL_BUILD)arch/arm/mach-msm/ mach-msm
-	ln -s $(KERNEL_BUILD)drivers/gpu/msm/ gpu_msm
+	ln -s $(KERNEL_BUILD)arch/arm/mach-tegra/ mach-tegra
 	make -C $(KERNEL_BUILD) M=$(PWD) modules
-	$(CROSS_COMPILE)strip --strip-debug kcontrol_gpu_msm.ko
+	$(CROSS_COMPILE)strip --strip-debug kcontrol_gpu_tegra.ko
 
 clean:
-ifneq ($(wildcard mach-msm),) 
-	rm mach-msm
-endif
-ifneq ($(wildcard gpu_msm),) 
-	rm gpu_msm
+ifneq ($(wildcard mach-tegra),)
+	rm mach-tegra
 endif
 	make -C $(KERNEL_BUILD) M=$(PWD) clean 2> /dev/null
 	rm -f modules.order *~
