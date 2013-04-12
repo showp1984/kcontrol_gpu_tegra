@@ -27,7 +27,7 @@
 #include <linux/sysfs.h>
 #include "mach-tegra/dvfs.h"
 
-#define THIS_EXPERIMENTAL 1
+#define THIS_EXPERIMENTAL 0
 
 #define DRIVER_AUTHOR "Dennis Rassmann <showp1984@gmail.com>"
 #define DRIVER_DESCRIPTION "KControl GPU module for tegra devices"
