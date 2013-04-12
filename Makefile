@@ -1,4 +1,4 @@
-KERNEL_BUILD := /home/showp1984/WORK/kernel/3.4.0-modbuild-kernel-aosp/
+KERNEL_BUILD := /home/showp1984/WORK/kernel/3.1.0-modbuild-kernel-tegra-aosp/
 
 obj-m += kcontrol_gpu_tegra.o
 

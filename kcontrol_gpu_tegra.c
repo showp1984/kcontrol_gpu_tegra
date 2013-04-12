@@ -39,6 +39,16 @@ MODULE_DESCRIPTION(DRIVER_DESCRIPTION);
 MODULE_VERSION(DRIVER_VERSION);
 MODULE_LICENSE("GPL");
 
+enum {
+	CLK_VDE = 0,
+	CLK_MPE,
+	CLK_2D,
+	CLK_EPP,
+	CLK_3D,
+	CLK_3D2,
+	CLK_SE,
+	CLK_CBUS
+};
 
 struct global_attr {
 	struct attribute attr;
@@ -74,19 +84,26 @@ static ssize_t show_tegra_freqs(struct kobject *a, struct attribute *b,
 	ssize_t len = 0;
 	int i = 0, j=0;
 	if ((core_table != NULL) && (soc_speedo != NULL)) {
-		for (i=0; (strcmp(core_table->clk_name, "spdif_out") != 0); i++) {
-			if (core_table->speedo_id != soc_speedo)
+		struct dvfs *d = core_table;
+		for (i=0; (strcmp((d->clk_name), "spdif_out") != 0); i++) {
+				d = (core_table+i);
+			if (d->speedo_id != *soc_speedo)
 				continue;
-			if ((strcmp(core_table->clk_name, "vde") == 0) ||
-				(strcmp(core_table->clk_name, "mpe") == 0) ||
-				(strcmp(core_table->clk_name, "2d") == 0) ||
-				(strcmp(core_table->clk_name, "epp") == 0) ||
-				(strcmp(core_table->clk_name, "3d") == 0) ||
-				(strcmp(core_table->clk_name, "3d2") == 0) ||
-				(strcmp(core_table->clk_name, "se") == 0) ||
-				(strcmp(core_table->clk_name, "cbus") == 0)) {
-				for (j=0; core_table->freqs[j] != 0; j++) {
-					len += sprintf(buf + len, "%s %u\n", core_table->clk_name, core_table->freqs[i]);
+			if ((strcmp(d->clk_name, "vde") == 0) ||
+				(strcmp(d->clk_name, "mpe") == 0) ||
+				(strcmp(d->clk_name, "2d") == 0) ||
+				(strcmp(d->clk_name, "epp") == 0) ||
+				(strcmp(d->clk_name, "3d") == 0) ||
+				(strcmp(d->clk_name, "3d2") == 0) ||
+				(strcmp(d->clk_name, "se") == 0) ||
+				(strcmp(d->clk_name, "cbus") == 0)) {
+				for (j=0; (d->freqs[j] != 0); j++) {
+					if (d->freqs[j] < 1000000)
+						continue;
+					len += sprintf(buf + len, "%s %lu\n", d->clk_name, d->freqs[j]);
+				}
+				if (strcmp(d->clk_name, "cbus") == 0) {
+					break;
 				}
 			}
 		}
@@ -99,19 +116,54 @@ static ssize_t store_tegra_freqs(struct kobject *a, struct attribute *b,
 				   const char *buf, size_t count)
 {
 	int i = 0;
-	unsigned int pwrlvl = 0;
+	unsigned int clock = 0, freq = 0;
 	long unsigned int hz = 0;
-	const char *chz = NULL;
+	const char *clk = NULL;
+	struct dvfs *d = core_table;
 
 	if ((core_table != NULL) && (soc_speedo != NULL)) {
-		for (i=0; i<count; i++) {
-			if (buf[i] == ' ') {
-				sscanf(&buf[(i-1)], "%u", &pwrlvl);
-				chz = &buf[(i+1)];
+		if ((buf[0] >= 0) &&
+			(buf[1] == ' ') &&
+			(buf[2] >= 0) &&
+			(buf[3] == ' ')) {
+			sscanf(buf, "%u %u %lu", &clock, &freq, &hz);
+			freq++;
+			switch (clock) {
+			case CLK_VDE:
+				clk = "vde";
+				break;
+			case CLK_MPE:
+				clk = "mpe";
+				break;
+			case CLK_2D:
+				clk = "2d";
+				break;
+			case CLK_EPP:
+				clk = "epp";
+				break;
+			case CLK_3D:
+				clk = "3d";
+				break;
+			case CLK_3D2:
+				clk = "3d2";
+				break;
+			case CLK_SE:
+				clk = "se";
+				break;
+			case CLK_CBUS:
+				clk = "cbus";
+				break;
+			}
+			for (i=0; (strcmp((d->clk_name), "spdif_out") != 0); i++) {
+				d = (core_table+i);
+				if (d->speedo_id != *soc_speedo)
+					continue;
+				if (strcmp((d->clk_name), clk) == 0) {
+					d->freqs[freq] = hz;
+					break;
+				}
 			}
 		}
-		sscanf(chz, "%lu", &hz);
-		kpwr->pwrlevels[pwrlvl].gpu_freq = hz;
 	} else {
 		pr_err(LOGTAG"Error! Pointer == null!\n");
 	}
