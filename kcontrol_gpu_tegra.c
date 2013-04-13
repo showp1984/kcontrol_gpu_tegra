@@ -97,7 +97,7 @@ static ssize_t show_tegra_freqs(struct kobject *a, struct attribute *b,
 				(strcmp(d->clk_name, "3d2") == 0) ||
 				(strcmp(d->clk_name, "se") == 0) ||
 				(strcmp(d->clk_name, "cbus") == 0)) {
-				for (j=0; (d->freqs[j] != 0); j++) {
+				for (j=0; j<(d->num_freqs); j++) {
 					if (d->freqs[j] < 1000000)
 						continue;
 					len += sprintf(buf + len, "%s %lu\n", d->clk_name, d->freqs[j]);
