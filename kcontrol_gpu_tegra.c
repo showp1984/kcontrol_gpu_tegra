@@ -24,6 +24,7 @@
 #include <linux/init.h>
 #include <linux/errno.h>
 #include <linux/kallsyms.h>
+#include <linux/delay.h>
 #include <linux/sysfs.h>
 #include "mach-tegra/dvfs.h"
 #include "mach-tegra/clock.h"
@@ -215,6 +216,8 @@ static ssize_t show_tegra_maxfreqs(struct kobject *a, struct attribute *b,
 	}
 	return len;
 }
+
+extern unsigned long clk_get_rate(struct clk *);
 static ssize_t store_tegra_maxfreqs(struct kobject *a, struct attribute *b,
 				   const char *buf, size_t count)
 {
@@ -255,7 +258,15 @@ static ssize_t store_tegra_maxfreqs(struct kobject *a, struct attribute *b,
 			}
 			set_clk = tegra_get_clock_by_name(clk);
 			if (set_clk != NULL) {
+				if (clk_get_rate(set_clk) > hz) {
+					pr_warn(LOGTAG"Waiting for clock %s to settle below new max %lu (current rate: %lu)\n",
+							clk, hz, clk_get_rate(set_clk));
+					while (clk_get_rate(set_clk) > hz) {
+						/* just wait */
+					}
+				}
 				set_clk->max_rate = hz;
+				pr_warn(LOGTAG"Just set new max_clock %lu for clock %s\n", hz, clk);
 			}
 		}
 	} else {
