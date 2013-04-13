@@ -225,6 +225,7 @@ static ssize_t store_tegra_maxfreqs(struct kobject *a, struct attribute *b,
 	long unsigned int hz = 0;
 	const char *clk = NULL;
 	struct clk *set_clk = NULL;
+	struct dvfs *d = NULL;
 
 	if (core_table != NULL) {
 		if ((buf[0] >= 0) &&
@@ -256,12 +257,13 @@ static ssize_t store_tegra_maxfreqs(struct kobject *a, struct attribute *b,
 				clk = "cbus";
 				break;
 			}
+			d = (core_table+clock);
 			set_clk = tegra_get_clock_by_name(clk);
 			if (set_clk != NULL) {
-				if (clk_get_rate(set_clk) > hz) {
+				if ((clk_get_rate(set_clk) > hz) || (d->cur_rate > hz)) {
 					pr_warn(LOGTAG"Waiting for clock %s to settle below new max %lu (current rate: %lu)\n",
 							clk, hz, clk_get_rate(set_clk));
-					while (clk_get_rate(set_clk) > hz) {
+					while ((clk_get_rate(set_clk) > hz) || (d->cur_rate > hz)) {
 						/* just wait */
 					}
 				}
@@ -281,6 +283,9 @@ static ssize_t show_tegra_curfreqs(struct kobject *a, struct attribute *b,
 {
 	ssize_t len = 0;
 	int i = 0;
+	const char *clk = NULL;
+	struct clk *set_clk = NULL;
+
 	if ((core_table != NULL) && (soc_speedo != NULL)) {
 		struct dvfs *d = core_table;
 		for (i=0; (strcmp((d->clk_name), "spdif_out") != 0); i++) {
@@ -295,7 +300,33 @@ static ssize_t show_tegra_curfreqs(struct kobject *a, struct attribute *b,
 				(strcmp(d->clk_name, "3d2") == 0) ||
 				(strcmp(d->clk_name, "se") == 0) ||
 				(strcmp(d->clk_name, "cbus") == 0)) {
-				len += sprintf(buf + len, "%s %lu\n", d->clk_name, d->cur_rate);
+				if (strcmp(d->clk_name, "vde") == 0)
+					clk = "vde";
+				if (strcmp(d->clk_name, "mpe") == 0)
+					clk = "mpe";
+				if (strcmp(d->clk_name, "2d") == 0)
+					clk = "2d";
+				if (strcmp(d->clk_name, "epp") == 0)
+					clk = "epp";
+				if (strcmp(d->clk_name, "3d") == 0)
+					clk = "3d";
+				if (strcmp(d->clk_name, "3d2") == 0)
+					clk = "3d2";
+				if (strcmp(d->clk_name, "se") == 0)
+					clk = "se";
+				if (strcmp(d->clk_name, "cbus") == 0)
+					clk = "cbus";
+				set_clk = tegra_get_clock_by_name(clk);
+				if (set_clk != NULL) {
+					if ((d->cur_rate == 0) &&
+						((strcmp(d->clk_name, "vde") == 0) ||
+						(strcmp(d->clk_name, "mpe") == 0) ||
+						(strcmp(d->clk_name, "se") == 0))) {
+						len += sprintf(buf + len, "%s %lu\n", d->clk_name, clk_get_rate(set_clk));
+					} else {
+						len += sprintf(buf + len, "%s %lu\n", d->clk_name, d->cur_rate);
+					}
+				}
 			}
 			if (strcmp(d->clk_name, "cbus") == 0) {
 				break;
