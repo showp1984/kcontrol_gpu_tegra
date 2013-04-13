@@ -171,6 +171,38 @@ static ssize_t store_tegra_freqs(struct kobject *a, struct attribute *b,
 }
 define_one_global_rw(tegra_freqs);
 
+static ssize_t show_tegra_curfreqs(struct kobject *a, struct attribute *b,
+				   char *buf)
+{
+	ssize_t len = 0;
+	int i = 0;
+	if ((core_table != NULL) && (soc_speedo != NULL)) {
+		struct dvfs *d = core_table;
+		for (i=0; (strcmp((d->clk_name), "spdif_out") != 0); i++) {
+				d = (core_table+i);
+			if (d->speedo_id != *soc_speedo)
+				continue;
+			if ((strcmp(d->clk_name, "vde") == 0) ||
+				(strcmp(d->clk_name, "mpe") == 0) ||
+				(strcmp(d->clk_name, "2d") == 0) ||
+				(strcmp(d->clk_name, "epp") == 0) ||
+				(strcmp(d->clk_name, "3d") == 0) ||
+				(strcmp(d->clk_name, "3d2") == 0) ||
+				(strcmp(d->clk_name, "se") == 0) ||
+				(strcmp(d->clk_name, "cbus") == 0)) {
+				len += sprintf(buf + len, "%s %lu\n", d->clk_name, d->cur_rate);
+			}
+			if (strcmp(d->clk_name, "cbus") == 0) {
+				break;
+			}
+		}
+	} else {
+		len += sprintf(buf + len, "Error! Pointer == null!\n");
+	}
+	return len;
+}
+define_one_global_ro(tegra_curfreqs);
+
 static ssize_t show_version(struct kobject *a, struct attribute *b,
 				   char *buf)
 {
@@ -184,6 +216,7 @@ define_one_global_ro(version);
 static struct attribute *kcontrol_gpu_tegra_attributes[] = {
 	&version.attr,
 	&tegra_freqs.attr,
+	&tegra_curfreqs.attr,
 	NULL
 };
 
