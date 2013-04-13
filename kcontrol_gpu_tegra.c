@@ -26,6 +26,7 @@
 #include <linux/kallsyms.h>
 #include <linux/sysfs.h>
 #include "mach-tegra/dvfs.h"
+#include "mach-tegra/clock.h"
 
 #define THIS_EXPERIMENTAL 0
 
@@ -120,6 +121,7 @@ static ssize_t store_tegra_freqs(struct kobject *a, struct attribute *b,
 	long unsigned int hz = 0;
 	const char *clk = NULL;
 	struct dvfs *d = core_table;
+	struct clk *set_clk = NULL;
 
 	if ((core_table != NULL) && (soc_speedo != NULL)) {
 		if ((buf[0] >= 0) &&
@@ -153,6 +155,13 @@ static ssize_t store_tegra_freqs(struct kobject *a, struct attribute *b,
 			case CLK_CBUS:
 				clk = "cbus";
 				break;
+			}
+			set_clk = tegra_get_clock_by_name(clk);
+			if (set_clk != NULL) {
+				if (set_clk->max_rate < hz) {
+					set_clk->max_rate = hz;
+					pr_info(LOGTAG"Raising max rate for clock %s to set freq %u to %lu\n", clk, freq, hz);
+				}
 			}
 			for (i=0; (strcmp((d->clk_name), "spdif_out") != 0); i++) {
 				d = (core_table+i);
