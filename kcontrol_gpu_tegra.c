@@ -180,6 +180,91 @@ static ssize_t store_tegra_freqs(struct kobject *a, struct attribute *b,
 }
 define_one_global_rw(tegra_freqs);
 
+static ssize_t show_tegra_maxfreqs(struct kobject *a, struct attribute *b,
+				   char *buf)
+{
+	ssize_t len = 0;
+	int i = 0;
+	struct clk *set_clk = NULL;
+
+	if ((core_table != NULL) && (soc_speedo != NULL)) {
+		struct dvfs *d = core_table;
+		for (i=0; (strcmp((d->clk_name), "spdif_out") != 0); i++) {
+				d = (core_table+i);
+			if (d->speedo_id != *soc_speedo)
+				continue;
+			if ((strcmp(d->clk_name, "vde") == 0) ||
+				(strcmp(d->clk_name, "mpe") == 0) ||
+				(strcmp(d->clk_name, "2d") == 0) ||
+				(strcmp(d->clk_name, "epp") == 0) ||
+				(strcmp(d->clk_name, "3d") == 0) ||
+				(strcmp(d->clk_name, "3d2") == 0) ||
+				(strcmp(d->clk_name, "se") == 0) ||
+				(strcmp(d->clk_name, "cbus") == 0)) {
+				set_clk = tegra_get_clock_by_name(d->clk_name);
+				if (set_clk != NULL) {
+					len += sprintf(buf + len, "%s %lu\n", d->clk_name, set_clk->max_rate);
+				}
+				if (strcmp(d->clk_name, "cbus") == 0) {
+					break;
+				}
+			}
+		}
+	} else {
+		len += sprintf(buf + len, "Error! Pointer == null!\n");
+	}
+	return len;
+}
+static ssize_t store_tegra_maxfreqs(struct kobject *a, struct attribute *b,
+				   const char *buf, size_t count)
+{
+	unsigned int clock = 0;
+	long unsigned int hz = 0;
+	const char *clk = NULL;
+	struct clk *set_clk = NULL;
+
+	if (core_table != NULL) {
+		if ((buf[0] >= 0) &&
+			(buf[1] == ' ')) {
+			sscanf(buf, "%u %lu", &clock, &hz);
+			switch (clock) {
+			case CLK_VDE:
+				clk = "vde";
+				break;
+			case CLK_MPE:
+				clk = "mpe";
+				break;
+			case CLK_2D:
+				clk = "2d";
+				break;
+			case CLK_EPP:
+				clk = "epp";
+				break;
+			case CLK_3D:
+				clk = "3d";
+				break;
+			case CLK_3D2:
+				clk = "3d2";
+				break;
+			case CLK_SE:
+				clk = "se";
+				break;
+			case CLK_CBUS:
+				clk = "cbus";
+				break;
+			}
+			set_clk = tegra_get_clock_by_name(clk);
+			if (set_clk != NULL) {
+				set_clk->max_rate = hz;
+			}
+		}
+	} else {
+		pr_err(LOGTAG"Error! Pointer == null!\n");
+	}
+	return count;
+}
+define_one_global_rw(tegra_maxfreqs);
+
 static ssize_t show_tegra_curfreqs(struct kobject *a, struct attribute *b,
 				   char *buf)
 {
@@ -226,6 +311,7 @@ static struct attribute *kcontrol_gpu_tegra_attributes[] = {
 	&version.attr,
 	&tegra_freqs.attr,
 	&tegra_curfreqs.attr,
+	&tegra_maxfreqs.attr,
 	NULL
 };
 
