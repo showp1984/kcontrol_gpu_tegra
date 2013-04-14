@@ -123,6 +123,7 @@ static ssize_t store_tegra_freqs(struct kobject *a, struct attribute *b,
 	const char *clk = NULL;
 	struct dvfs *d = core_table;
 	struct clk *set_clk = NULL;
+	struct clk *shared_bus_user;
 
 	if ((core_table != NULL) && (soc_speedo != NULL)) {
 		if ((buf[0] >= 0) &&
@@ -160,8 +161,16 @@ static ssize_t store_tegra_freqs(struct kobject *a, struct attribute *b,
 			set_clk = tegra_get_clock_by_name(clk);
 			if (set_clk != NULL) {
 				if (set_clk->max_rate < hz) {
-					set_clk->max_rate = hz;
-					pr_info(LOGTAG"Raising max rate for clock %s to set freq %u to %lu\n", clk, freq, hz);
+					if (set_clk->max_rate != hz) {
+						pr_warn(LOGTAG"Increasing %s maximum rate from %lu to %lu\n", set_clk->name, set_clk->max_rate, hz);
+
+						set_clk->max_rate = hz;
+						list_for_each_entry(shared_bus_user,
+									&set_clk->shared_bus_list, u.shared_bus_user.node) {
+							shared_bus_user->u.shared_bus_user.rate = hz;
+							shared_bus_user->max_rate = hz;
+						}
+					}
 				}
 			}
 			for (i=0; (strcmp((d->clk_name), "spdif_out") != 0); i++) {
@@ -225,6 +234,7 @@ static ssize_t store_tegra_maxfreqs(struct kobject *a, struct attribute *b,
 	long unsigned int hz = 0;
 	const char *clk = NULL;
 	struct clk *set_clk = NULL;
+	struct clk *shared_bus_user;
 	struct dvfs *d = NULL;
 
 	if (core_table != NULL) {
@@ -260,15 +270,17 @@ static ssize_t store_tegra_maxfreqs(struct kobject *a, struct attribute *b,
 			d = (core_table+clock);
 			set_clk = tegra_get_clock_by_name(clk);
 			if (set_clk != NULL) {
-				if ((clk_get_rate(set_clk) > hz) || (d->cur_rate > hz)) {
-					pr_warn(LOGTAG"Waiting for clock %s to settle below new max %lu (current rate: %lu)\n",
-							clk, hz, clk_get_rate(set_clk));
-					while ((clk_get_rate(set_clk) > hz) || (d->cur_rate > hz)) {
-						/* just wait */
-					}
-				}
+				if (set_clk->max_rate == hz)
+					return count;
+
+				pr_warn(LOGTAG"Changing %s maximum rate from %lu to %lu\n", set_clk->name, set_clk->max_rate, hz);
+
 				set_clk->max_rate = hz;
-				pr_warn(LOGTAG"Just set new max_clock %lu for clock %s\n", hz, clk);
+				list_for_each_entry(shared_bus_user,
+							&set_clk->shared_bus_list, u.shared_bus_user.node) {
+					shared_bus_user->u.shared_bus_user.rate = hz;
+					shared_bus_user->max_rate = hz;
+				}
 			}
 		}
 	} else {
