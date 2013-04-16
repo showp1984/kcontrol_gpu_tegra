@@ -234,7 +234,6 @@ static ssize_t store_tegra_maxfreqs(struct kobject *a, struct attribute *b,
 	const char *clk = NULL;
 	struct clk *set_clk = NULL;
 	struct clk *shared_bus_user;
-	struct dvfs *d = NULL;
 
 	if (core_table != NULL) {
 		if ((buf[0] >= 0) &&
@@ -266,7 +265,6 @@ static ssize_t store_tegra_maxfreqs(struct kobject *a, struct attribute *b,
 				clk = "cbus";
 				break;
 			}
-			d = (core_table+clock);
 			set_clk = tegra_get_clock_by_name(clk);
 			if (set_clk != NULL) {
 				if (set_clk->max_rate == hz)
