@@ -24,6 +24,7 @@
 #include <linux/kallsyms.h>
 #include <linux/delay.h>
 #include <linux/sysfs.h>
+#include <linux/dcache.h>
 #include "mach-tegra/dvfs.h"
 #include "mach-tegra/clock.h"
 
