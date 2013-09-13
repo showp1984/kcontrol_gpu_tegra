@@ -15,4 +15,4 @@ ifneq ($(wildcard mach-tegra),)
 	rm mach-tegra
 endif
 	make -C $(KERNEL_BUILD) M=$(PWD) clean 2> /dev/null
-	rm -f modules.order *~
+	rm -f modules.order *~ *.o
