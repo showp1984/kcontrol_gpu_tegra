@@ -59,11 +59,11 @@ struct global_attr_kcontrol {
 			 const char *c, size_t count);
 };
 
-#define define_one_global_ro(_name)		\
+#define define_one_global_ro_kcontrol(_name)		\
 static struct global_attr_kcontrol _name =		\
 __ATTR(_name, 0444, show_##_name, NULL)
 
-#define define_one_global_rw(_name)		\
+#define define_one_global_rw_kcontrol(_name)		\
 static struct global_attr_kcontrol _name =		\
 __ATTR(_name, 0644, show_##_name, store_##_name)
 
@@ -187,7 +187,7 @@ static ssize_t store_tegra_freqs(struct kobject *a, struct attribute *b,
 	}
 	return count;
 }
-define_one_global_rw(tegra_freqs);
+define_one_global_rw_kcontrol(tegra_freqs);
 
 static ssize_t show_tegra_maxfreqs(struct kobject *a, struct attribute *b,
 				   char *buf)
@@ -285,7 +285,7 @@ static ssize_t store_tegra_maxfreqs(struct kobject *a, struct attribute *b,
 	}
 	return count;
 }
-define_one_global_rw(tegra_maxfreqs);
+define_one_global_rw_kcontrol(tegra_maxfreqs);
 
 static ssize_t show_tegra_curfreqs(struct kobject *a, struct attribute *b,
 				   char *buf)
@@ -346,7 +346,7 @@ static ssize_t show_tegra_curfreqs(struct kobject *a, struct attribute *b,
 	}
 	return len;
 }
-define_one_global_ro(tegra_curfreqs);
+define_one_global_ro_kcontrol(tegra_curfreqs);
 
 static ssize_t show_version(struct kobject *a, struct attribute *b,
 				   char *buf)
@@ -356,7 +356,7 @@ static ssize_t show_version(struct kobject *a, struct attribute *b,
 	len += sprintf(buf + len, "\n");
 	return len;
 }
-define_one_global_ro(version);
+define_one_global_ro_kcontrol(version);
 
 static struct attribute *kcontrol_gpu_tegra_attributes[] = {
 	&version.attr,
